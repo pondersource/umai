@@ -1,0 +1,25 @@
+name: Solid pod acceptance
+on:
+  push:
+    branches: [solid-pod-acceptance]
+  pull_request:
+jobs:
+  recipe-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+      - run: npm ci --prefix solid-server
+      - run: npm install --prefix acceptance --no-package-lock
+      - run: npx --prefix acceptance playwright install --with-deps chromium
+      - run: npm --prefix acceptance test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: acceptance/test-results/
