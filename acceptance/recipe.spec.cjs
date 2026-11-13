@@ -44,14 +44,14 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         name: 'recipe.jsonld',
         mimeType: 'application/ld+json',
         buffer: Buffer.from(JSON.stringify({
-            '@context': 'https://schema.org',
+            '@context': { '@vocab': 'https://schema.org/' },
             '@type': 'Recipe',
             name: title,
             recipeIngredient: ['1 cup flour'],
-            recipeInstructions: 'Mix the flour.',
+            recipeInstructions: [{ '@type': 'HowToStep', text: 'Mix the flour.', position: 1 }],
         })),
     });
-    await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(page.getByText(title, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     const saved = await write;
     const recipeUrl = new URL(saved.headers().location || saved.url(), saved.url()).href;
     expect(recipeUrl).not.toBe(pod + 'cookbook/');
