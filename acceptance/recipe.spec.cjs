@@ -33,7 +33,7 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
     await connect(page, true);
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
 
-    await page.getByText('New recipe', { exact: true }).click();
+    await page.getByText(/^(New recipe|Create your first recipe)$/).first().click();
     const write = page.waitForResponse(response =>
         response.url().startsWith(pod + 'cookbook/') &&
         ['PUT', 'PATCH', 'POST'].includes(response.request().method()) &&
