@@ -65,7 +65,16 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         );
         await connect(freshPage);
         const stored = await read;
-        expect(await stored.text()).toContain(title);
+        const { parseRecipes } = await import('../shared-data-modules/recipes/index.js');
+        expect(parseRecipes(await stored.text(), stored.url())).toEqual(expect.arrayContaining([
+            expect.objectContaining({
+                recipe: expect.objectContaining({
+                    title,
+                    ingredients: ['1 cup flour'],
+                    instructions: ['Mix the flour.'],
+                }),
+            }),
+        ]));
         await freshPage.getByText(title, { exact: true }).first().click();
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
     } finally {

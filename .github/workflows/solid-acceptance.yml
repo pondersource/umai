@@ -8,6 +8,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: pondersource/data-modules
+          ref: 63d6ccaa822305573327552c0fb8e9d1ed2d14a3
+          path: shared-data-modules
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -17,6 +22,7 @@ jobs:
       - run: npm ci --prefix solid-server
       - run: npm install --prefix acceptance --no-package-lock
       - run: npx --prefix acceptance playwright install --with-deps chromium
+      - run: npm install --prefix shared-data-modules/recipes --no-package-lock --no-audit
       - run: npm --prefix acceptance test
       - uses: actions/upload-artifact@v4
         if: failure()
