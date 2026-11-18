@@ -26,7 +26,7 @@ async function connect(page, register = false) {
     await page.locator('#password').fill(password);
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await page.getByRole('button', { name: /authorize|consent/i }).click();
-    await expect(page).toHaveURL(/^http:\/\/localhost:5001\//);
+    await expect(page).toHaveURL(url => url.origin === new URL(process.env.ACCEPTANCE_URL || 'http://localhost:5001').origin);
 }
 
 test('persists a private recipe and syncs it into a fresh browser', async ({ page, browser, request, baseURL }) => {
