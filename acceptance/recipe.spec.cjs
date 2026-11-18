@@ -6,6 +6,10 @@ const password = 'umai-ci-password';
 const title = 'Playwright acceptance recipe';
 
 async function connect(page, register = false) {
+    if (process.env.ACCEPTANCE_URL) {
+        // Allow this public test origin to reach the disposable localhost Pod.
+        await page.context().grantPermissions(['local-network-access'], { origin: process.env.ACCEPTANCE_URL });
+    }
     await page.goto('/');
     await page.getByText('Connect your Solid POD', { exact: true }).click();
     const login = page.getByLabel('Login url');
@@ -26,7 +30,7 @@ async function connect(page, register = false) {
     await page.locator('#password').fill(password);
     await page.getByRole('button', { name: 'Log in', exact: true }).click();
     await page.getByRole('button', { name: /authorize|consent/i }).click();
-    await expect(page).toHaveURL(/^http:\/\/localhost:5001\//);
+    await expect(page).toHaveURL(url => url.origin === new URL(process.env.ACCEPTANCE_URL || 'http://localhost:5001').origin);
 }
 
 test('persists a private recipe and syncs it into a fresh browser', async ({ page, browser, request, baseURL }) => {
@@ -76,6 +80,12 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
             }),
         ]));
         await freshPage.getByText(title, { exact: true }).first().click();
+        await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
+        const recipeRoute = freshPage.url();
+        await freshPage.reload();
+        // CSS asks for consent again when this client restores its session.
+        await freshPage.getByRole('button', { name: /authorize|consent/i }).click();
+        await expect(freshPage).toHaveURL(recipeRoute);
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
     } finally {
         await fresh.close();
