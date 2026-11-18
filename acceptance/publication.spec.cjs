@@ -12,7 +12,8 @@ test('published origin serves its client identity, assets and direct recipe rout
     });
     await page.goto('/recipes');
     await expect(page.getByText('Connect your Solid POD', { exact: true })).toBeVisible();
-    await expect(page).toHaveURL(origin + '/recipes');
+    // The app intentionally redirects its /recipes index to the home screen.
+    await expect(page).toHaveURL(origin + '/');
     const assets = await page.locator('script[src], link[rel=stylesheet]').evaluateAll(nodes => nodes.map(n => n.src || n.href));
     expect(assets.length).toBeGreaterThan(0);
     for (const asset of assets) {

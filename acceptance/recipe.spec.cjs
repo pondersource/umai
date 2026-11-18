@@ -6,6 +6,10 @@ const password = 'umai-ci-password';
 const title = 'Playwright acceptance recipe';
 
 async function connect(page, register = false) {
+    if (process.env.ACCEPTANCE_URL) {
+        // Allow this public test origin to reach the disposable localhost Pod.
+        await page.context().grantPermissions(['local-network-access'], { origin: process.env.ACCEPTANCE_URL });
+    }
     await page.goto('/');
     await page.getByText('Connect your Solid POD', { exact: true }).click();
     const login = page.getByLabel('Login url');
@@ -76,6 +80,10 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
             }),
         ]));
         await freshPage.getByText(title, { exact: true }).first().click();
+        await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
+        const recipeRoute = freshPage.url();
+        await freshPage.reload();
+        await expect(freshPage).toHaveURL(recipeRoute);
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
     } finally {
         await fresh.close();
