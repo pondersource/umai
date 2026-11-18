@@ -1,0 +1,88 @@
+name: Solid pod acceptance
+on:
+  push:
+    branches: [main, solid-pod-acceptance]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  recipe-sync:
+    strategy:
+      fail-fast: false
+      matrix:
+        build: [development, production]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: pondersource/data-modules
+          ref: 63d6ccaa822305573327552c0fb8e9d1ed2d14a3
+          path: shared-data-modules
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+      - run: npm ci --prefix solid-server
+      - run: npm install --prefix acceptance --no-package-lock
+      - run: npx --prefix acceptance playwright install --with-deps chromium
+      - run: npm install --prefix shared-data-modules/recipes --no-package-lock --no-audit
+      - run: npm run build
+        if: matrix.build == 'production'
+        env:
+          VITE_APP_DOMAIN: http://localhost:5001
+      - run: npm --prefix acceptance test
+        env:
+          ACCEPTANCE_BUILD: ${{ matrix.build }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results-${{ matrix.build }}
+          path: acceptance/test-results/
+
+  build:
+    needs: recipe-sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+        env:
+          CYPRESS_INSTALL_BINARY: '0'
+      - run: npm run build
+        env:
+          VITE_APP_DOMAIN: https://umai.pondersource.com
+      - run: |
+          printf '%s\n' umai.pondersource.com > dist/CNAME
+          touch dist/.nojekyll
+      - uses: actions/upload-artifact@v4
+        with:
+          name: umai-production
+          path: dist/
+
+  deploy:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: umai-production
+          path: site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
+        id: deployment
