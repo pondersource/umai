@@ -20,6 +20,7 @@ test('published origin serves its client identity, assets and direct recipe rout
         expect(new URL(asset).origin).toBe(origin);
         expect((await request.get(asset)).ok()).toBeTruthy();
     }
-    const registrations = await page.evaluate(() => navigator.serviceWorker.getRegistrations().then(rs => rs.map(r => r.scope)));
-    for (const scope of registrations) expect(scope).toBe(origin + '/');
+    const worker = await page.evaluate(() => navigator.serviceWorker.ready.then(r => ({ scope: r.scope, script: r.active.scriptURL })));
+    expect(worker.scope).toBe(origin + '/');
+    expect(worker.script).toBe(origin + '/sw.js');
 });
