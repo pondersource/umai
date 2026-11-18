@@ -83,6 +83,8 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
         const recipeRoute = freshPage.url();
         await freshPage.reload();
+        // CSS asks for consent again when this client restores its session.
+        await freshPage.getByRole('button', { name: /authorize|consent/i }).click();
         await expect(freshPage).toHaveURL(recipeRoute);
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
     } finally {
