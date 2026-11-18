@@ -23,7 +23,7 @@ jobs:
             if [ "$(jq -r .build_type /tmp/pages.json)" != workflow ]; then
               gh api --method PUT "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow > /tmp/pages-update.json
             fi
-          elif rg -q 'HTTP 404' /tmp/pages-error; then
+          elif grep -q 'HTTP 404' /tmp/pages-error; then
             gh api --method POST "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow > /tmp/pages-created.json 2>/tmp/pages-create-error || {
               cat /tmp/pages-create-error
               gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
