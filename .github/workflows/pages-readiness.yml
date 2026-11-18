@@ -1,4 +1,4 @@
-name: Pages readiness
+name: Enable Pages publishing
 on:
   pull_request:
     paths: [.github/workflows/pages-readiness.yml]
@@ -9,27 +9,35 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
-      pages: read
+      pages: write
       statuses: write
     steps:
-      - name: Check Pages configuration
+      - name: Enable GitHub Actions Pages publishing
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           state=failure
-          description="Pages configuration unavailable; inspect readiness logs"
+          description="Pages configuration failed; inspect logs"
           if gh api "repos/$GITHUB_REPOSITORY/pages" > /tmp/pages.json 2>/tmp/pages-error; then
-            jq '{status, html_url, cname, build_type}' /tmp/pages.json
-            if [ "$(jq -r .build_type /tmp/pages.json)" = workflow ]; then
-              state=success
-              description="GitHub Pages uses Actions; hostname still needs live verification"
-            else
-              description="GitHub Pages must be configured to use Actions"
+            if [ "$(jq -r .build_type /tmp/pages.json)" != workflow ]; then
+              gh api --method PUT "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow > /tmp/pages-update.json
             fi
+          elif rg -q 'HTTP 404' /tmp/pages-error; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/pages" -f build_type=workflow > /tmp/pages-created.json 2>/tmp/pages-create-error || {
+              cat /tmp/pages-create-error
+              gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+                -f state=failure -f context="Pages readiness" \
+                -f description="GitHub refused automatic Pages enablement; inspect logs" \
+                -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+              exit 1
+            }
           else
             cat /tmp/pages-error
+            exit 1
           fi
+          gh api "repos/$GITHUB_REPOSITORY/pages" --jq '{status, html_url, cname, build_type}'
           gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
-            -f state="$state" -f context="Pages readiness" -f description="$description" \
+            -f state=success -f context="Pages readiness" \
+            -f description="GitHub Pages uses Actions; domain and deployment verification pending" \
             -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
