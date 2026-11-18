@@ -1,0 +1,35 @@
+name: Pages readiness
+on:
+  pull_request:
+    paths: [.github/workflows/pages-readiness.yml]
+permissions:
+  contents: read
+jobs:
+  pages:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      pages: read
+      statuses: write
+    steps:
+      - name: Check Pages configuration
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          state=failure
+          description="Pages configuration unavailable; inspect readiness logs"
+          if gh api "repos/$GITHUB_REPOSITORY/pages" > /tmp/pages.json 2>/tmp/pages-error; then
+            jq '{status, html_url, cname, build_type}' /tmp/pages.json
+            if [ "$(jq -r .build_type /tmp/pages.json)" = workflow ]; then
+              state=success
+              description="GitHub Pages uses Actions; hostname still needs live verification"
+            else
+              description="GitHub Pages must be configured to use Actions"
+            fi
+          else
+            cat /tmp/pages-error
+          fi
+          gh api --method POST "repos/$GITHUB_REPOSITORY/statuses/$HEAD_SHA" \
+            -f state="$state" -f context="Pages readiness" -f description="$description" \
+            -f target_url="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
