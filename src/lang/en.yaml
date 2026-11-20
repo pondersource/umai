@@ -148,7 +148,7 @@ home:
     getStarted: How would you like to begin?
     createRecipe: Create your first recipe
     createRecipe_info: How do you want to create your recipe?
-    loginWithSolid: Connect your Solid POD
+    loginWithSolid: Connect your storage
     loginWithSolid_info: You can connect to your Solid POD using your webId or issue provider below. If you don't have one, learn how to get started at <CoreLink url="https://solidproject.org/users/get-a-pod" color="brand-solid">solidproject.org</CoreLink>.
     loginWithSolid_label: Login url
     loginWithSolid_placeholder: webId or issue provider

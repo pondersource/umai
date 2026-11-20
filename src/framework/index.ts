@@ -83,7 +83,7 @@ export async function bootstrapApplication(
         .entries(authenticators)
         .forEach(([name, authenticator]) => registerAuthenticator(name as AuthenticatorName, authenticator));
 
-    setDefaultAuthenticator(getAuthenticator(options.defaultAuthenticator ?? 'inrupt'));
+    setDefaultAuthenticator(getAuthenticator(options.defaultAuthenticator ?? 'remoteStorage'));
 
     await options.beforeLaunch?.(app);
     await Promise.all(

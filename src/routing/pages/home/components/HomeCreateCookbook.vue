@@ -21,13 +21,13 @@
                         </span>
                         <CoreInput ref="$name" name="name" class="ml-2 flex-grow" />
                     </label>
-                    <label class="flex flex-row items-center w-full">
+                    <label v-if="!moduleStorage" class="flex flex-row items-center w-full">
                         <span ref="$storageUrlLabel" class="font-medium">
                             {{ $t('home.createCookbook.storageUrlLabel') }}
                         </span>
                         <CoreInput name="storageUrl" class="ml-2 flex-grow" />
                     </label>
-                    <CoreMarkdown :text="$t('home.createCookbook.urlPreview', {url})" class="text-sm" />
+                    <CoreMarkdown v-if="!moduleStorage" :text="$t('home.createCookbook.urlPreview', {url})" class="text-sm" />
                 </div>
             </CoreDetails>
             <div class="flex flex-row items-center self-end mt-4 space-x-3">
@@ -71,6 +71,7 @@ import type { IFocusable } from '@/framework/components/headless';
 import Cookbook from '@/services/facades/Cookbook';
 import CookbookExistsError from '@/services/errors/cookbook-exists-error';
 
+const moduleStorage = !!window.ponderStorage;
 let processing = $ref(false);
 const form = reactiveForm({
     name: {

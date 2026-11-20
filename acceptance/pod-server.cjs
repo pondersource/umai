@@ -1,0 +1,10 @@
+const {mkdtempSync,writeFileSync,rmSync}=require('node:fs');
+const {tmpdir}=require('node:os');
+const {join}=require('node:path');
+const {spawn}=require('node:child_process');
+const directory=mkdtempSync(join(tmpdir(),'rs-native-test-'));
+const seed=join(directory,'accounts.json');
+writeFileSync(seed,JSON.stringify([{email:'alice@example.com',password:'storage-test-password',pods:[{name:'alice',settings:{linkStorage:true}}]}]),{mode:0o600});
+const server=spawn(process.execPath,[require.resolve('@solid/community-server/bin/server.js'),'--port','4000','--baseUrl','http://localhost:4000/','--loggingLevel','error','--seedConfig',seed],{stdio:'inherit'});
+for(const signal of ['SIGINT','SIGTERM'])process.on(signal,()=>server.kill(signal));
+server.on('exit',code=>{rmSync(directory,{recursive:true,force:true});process.exit(code||0);});
