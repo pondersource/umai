@@ -11,7 +11,7 @@ test('published origin serves its client identity, assets and direct recipe rout
         redirect_uris: [origin + '/'],
     });
     await page.goto('/recipes');
-    await expect(page.getByText('Connect your storage', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Connect your storage', exact: true })).toBeVisible();
     // The app intentionally redirects its /recipes index to the home screen.
     await expect(page).toHaveURL(origin + '/');
     const assets = await page.locator('script[src], link[rel=stylesheet]').evaluateAll(nodes => nodes.map(n => n.src || n.href));
