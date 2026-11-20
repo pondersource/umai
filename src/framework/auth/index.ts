@@ -1,3 +1,4 @@
+import RemoteStorageAuthenticator from './authenticators/RemoteStorageAuthenticator';
 import LocalStorageAuthenticator from './authenticators/LocalStorageAuthenticator';
 import InruptAuthenticator from './authenticators/InruptAuthenticator';
 import type Authenticator from './Authenticator';
@@ -7,6 +8,7 @@ const _authenticators = {} as Authenticators;
 type BaseAuthenticators = typeof authenticators;
 
 export const authenticators = {
+    remoteStorage: new RemoteStorageAuthenticator,
     localStorage: new LocalStorageAuthenticator,
     inrupt: new InruptAuthenticator,
 };

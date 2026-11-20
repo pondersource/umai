@@ -291,7 +291,7 @@ export default class AuthService extends Service<State, ComputedState> {
             });
         }
 
-        await this.restorePreviousSession();
+        await this.bootAuthenticator('remoteStorage');
         await this.restoreFlashRoute();
         await this.startupReconnect();
         await this.autoLogin();

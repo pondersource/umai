@@ -3,12 +3,24 @@
         <template #title>
             <div class="flex justify-between">
                 {{ $t('recipes.share') }}
-                <RecipeAccessControl v-if="requiresPermissions" :recipe="recipe" />
+                <RecipeAccessControl v-if="requiresPermissions && !moduleStorage" :recipe="recipe" />
             </div>
         </template>
 
         <template #default="{ close }">
             <RecipeShareOptions v-model="shareOption" />
+            <div v-if="requiresPermissions && moduleStorage" class="mt-4 flex flex-col gap-2">
+                <p>Share a public copy of this recipe. Your cookbook stays private.</p>
+                <CoreButton :disabled="sharing" @click="publishRecipe">
+                    {{ sharing ? 'Saving public copy…' : publicUrl ? 'Update public copy' : 'Create public link' }}
+                </CoreButton>
+                <CoreButton v-if="publicUrl" :disabled="sharing" @click="removePublicCopy">
+                    Remove public copy
+                </CoreButton>
+                <p v-if="sharingError" role="alert">
+                    {{ sharingError }}
+                </p>
+            </div>
             <CoreClipboard v-if="clipboardContent" class="mt-4 max-w-prose" :text="clipboardContent" />
             <p v-if="warning" class="text-red-500 flex self-start mt-2 max-w-prose">
                 <i-zondicons-exclamation-outline class="w-4 h-4 mt-1 mr-2 flex-shrink-0" />
@@ -36,7 +48,7 @@
                     <span class="ml-2">{{ $t('recipes.print') }}</span>
                 </CoreButton>
                 <CoreButton
-                    v-else-if="shareOption !== 'print' && $browser.supportsSharing"
+                    v-else-if="shareOption !== 'print' && clipboardContent && $browser.supportsSharing"
                     @click="close(), share()"
                 >
                     <i-pepicons-share-android class="w-6 h-6" aria-hidden="true" />
@@ -48,6 +60,7 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { after, objectWithoutEmpty, stringExcerpt, urlRoot } from '@noeldemartin/utils';
 
 import Browser from '@/framework/core/facades/Browser';
@@ -64,13 +77,46 @@ const { recipe } = defineProps({
     recipe: requiredObjectProp<Recipe>(),
 });
 
+const moduleStorage = window.ponderStorage;
+let publicUrl = $ref<string | undefined>();
+let sharing = $ref(false);
+let sharingError = $ref('');
+onMounted(async () => {
+    if (moduleStorage && Cookbook.isRemote) {
+        publicUrl = await moduleStorage.api.getPublicURL(recipe.requireDocumentUrl());
+    }
+});
+async function publishRecipe() {
+    sharing = true;
+    sharingError = '';
+    try {
+        const related = recipe.imageUrl?.startsWith(moduleStorage.api.root) ? [recipe.imageUrl] : [];
+        publicUrl = await moduleStorage.api.publish(recipe.requireDocumentUrl(), related);
+    } catch (error) {
+        sharingError = error instanceof Error ? error.message : 'The public copy could not be saved.';
+    } finally {
+        sharing = false;
+    }
+}
+async function removePublicCopy() {
+    sharing = true;
+    sharingError = '';
+    try {
+        await moduleStorage.api.unpublish(recipe.requireDocumentUrl());
+        publicUrl = undefined;
+    } catch (error) {
+        sharingError = error instanceof Error ? error.message : 'The public copy could not be removed.';
+    } finally {
+        sharing = false;
+    }
+}
 const includeHistory = $ref(false);
 const shareOption = $ref<RecipeShareOption>(Cookbook.isRemote ? RecipeShareOption.Umai : RecipeShareOption.JsonLD);
 const clipboardContents: Record<RecipeShareOption, string | null> = $computed(() => ({
     [RecipeShareOption.Umai]:
-        urlRoot(location.href) +
-        Router.resolve({ name: 'viewer', query: { url: recipe.getDocumentUrl() } }).href,
-    [RecipeShareOption.Solid]: recipe.url,
+        moduleStorage && !publicUrl ? null : urlRoot(location.href) +
+        Router.resolve({ name: 'viewer', query: { url: publicUrl ?? recipe.getDocumentUrl() } }).href,
+    [RecipeShareOption.Solid]: moduleStorage ? publicUrl ?? null : recipe.url,
     [RecipeShareOption.JsonLD]: JSON.stringify(recipe.toExternalJsonLD({ includeHistory }), null, 2),
     [RecipeShareOption.Print]: null,
 }));
@@ -87,7 +133,7 @@ const warning = $computed(() => {
         return translate('recipes.print_unsupportedBrowser');
     }
 
-    if (!requiresPermissions || recipe.isPrivate === false) {
+    if (moduleStorage || !requiresPermissions || recipe.isPrivate === false) {
         return;
     }
 

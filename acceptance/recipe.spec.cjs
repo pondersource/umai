@@ -2,29 +2,19 @@ const { test, expect } = require('@playwright/test');
 
 const pod = 'http://localhost:4000/alice/';
 const email = 'alice@example.com';
-const password = 'umai-ci-password';
+const password = 'storage-test-password';
 const title = 'Playwright acceptance recipe';
 
-async function connect(page, register = false) {
+async function connect(page) {
     if (process.env.ACCEPTANCE_URL) {
         // Allow this public test origin to reach the disposable localhost Pod.
         await page.context().grantPermissions(['local-network-access'], { origin: process.env.ACCEPTANCE_URL });
     }
     await page.goto('/');
-    await page.getByText('Connect your Solid POD', { exact: true }).click();
-    const login = page.getByLabel('Login url');
-    await login.fill(pod);
-    await login.press('Enter');
+    await page.locator('.rs-choose-solid').click();
+    await page.locator('[name=rs-provider-address]').fill('http://localhost:4000');
+    await page.locator('.rs-solid-connect').click();
 
-    if (register) {
-        await page.getByText('Sign up', { exact: true }).click();
-        await page.locator('#email').fill(email);
-        await page.locator('#password').fill(password);
-        await page.locator('#confirmPassword').fill(password);
-        await page.locator('#podName').fill('alice');
-        await page.getByRole('button', { name: 'Sign up', exact: true }).click();
-        await page.getByRole('link', { name: 'log in', exact: true }).click();
-    }
 
     await page.locator('#email').fill(email);
     await page.locator('#password').fill(password);
@@ -34,12 +24,13 @@ async function connect(page, register = false) {
 }
 
 test('persists a private recipe and syncs it into a fresh browser', async ({ page, browser, request, baseURL }) => {
-    await connect(page, true);
+    await connect(page);
+    const registered = page.waitForResponse(response => response.ok() && response.request().method()==='PUT' && response.url().includes('privateTypeIndex') && (response.request().postData()||'').includes('TypeRegistration'));
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
 
     await page.getByText(/^(New recipe|Create your first recipe)$/).first().click();
     const write = page.waitForResponse(response =>
-        response.url().startsWith(pod + 'cookbook/') &&
+        response.url().startsWith(pod + 'recipes/_rs/resources/') &&
         ['PUT', 'PATCH', 'POST'].includes(response.request().method()) &&
         response.ok() &&
         (response.request().postData() || '').includes(title),
@@ -57,9 +48,27 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
     });
     await expect(page.getByText(title, { exact: true }).first()).toBeVisible({ timeout: 15_000 });
     const saved = await write;
+    await registered;
     const recipeUrl = new URL(saved.headers().location || saved.url(), saved.url()).href;
-    expect(recipeUrl).not.toBe(pod + 'cookbook/');
+    expect(recipeUrl).not.toBe(pod + 'recipes/_rs/resources/');
     expect([401, 403, 404]).toContain((await request.get(recipeUrl)).status());
+
+    if (await page.getByRole('button',{name:'not now',exact:true}).isVisible()) await page.getByRole('button',{name:'not now',exact:true}).click();
+    await page.getByRole('button',{name:'Share',exact:true}).click();
+    await page.getByRole('button',{name:'Create public link',exact:true}).click();
+    await expect(page.getByRole('button',{name:'Remove public copy',exact:true})).toBeVisible();
+    const documentUrl=JSON.parse(saved.request().postData()).url;
+    const publicUrl=await page.evaluate(url=>window.ponderStorage.api.getPublicURL(url),documentUrl);
+    expect(publicUrl).toMatch(/^http:/);
+    const published=await request.get(publicUrl);
+    expect(published.status()).toBe(200);
+    expect(await published.text()).toContain(title);
+    await page.getByRole('button',{name:'Remove public copy',exact:true}).click();
+    await expect(page.getByRole('button',{name:'Create public link',exact:true})).toBeVisible();
+    expect([401,403,404]).toContain((await request.get(publicUrl)).status());
+    expect(await page.evaluate(async url=>(await window.ponderStorage.rs.solid.getSession().fetch(url)).status,publicUrl)).toBe(404);
+    expect(await page.evaluate(async url=>(await window.ponderStorage.api.fetch(url)).status,documentUrl)).toBe(200);
+    await page.keyboard.press('Escape');
 
     const fresh = await browser.newContext({ baseURL });
     try {
@@ -70,7 +79,7 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         await connect(freshPage);
         const stored = await read;
         const { parseRecipes } = await import('../shared-data-modules/recipes/index.js');
-        expect(parseRecipes(await stored.text(), stored.url())).toEqual(expect.arrayContaining([
+        expect(parseRecipes((await stored.json()).resource.triples.join('\n'), stored.url())).toEqual(expect.arrayContaining([
             expect.objectContaining({
                 recipe: expect.objectContaining({
                     title,
@@ -83,10 +92,12 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
         const recipeRoute = freshPage.url();
         await freshPage.reload();
-        // CSS asks for consent again when this client restores its session.
-        await freshPage.getByRole('button', { name: /authorize|consent/i }).click();
+        // rs.js restores its persisted session without another consent prompt.
         await expect(freshPage).toHaveURL(recipeRoute);
         await expect(freshPage.getByText('1 cup flour', { exact: false }).first()).toBeVisible();
+        if (!await freshPage.locator('.rs-box-connected .rs-disconnect').isVisible()) await freshPage.locator('.rs-widget-icon').click();
+        await freshPage.locator('.rs-box-connected .rs-disconnect').click();
+        await expect(freshPage.getByText(title, {exact:true})).toHaveCount(0);
     } finally {
         await fresh.close();
     }
