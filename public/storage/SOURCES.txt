@@ -1,7 +1,7 @@
 PonderSource storage runtime sources
 
 rs.js: https://github.com/remotestorage/remotestorage.js
-commit: fda7c0fa3101e64e6a975d5844f6382112ebad3a
+commit: 92e1fc4dc0526d5c29bfef11dfc2bf9ad646347d
 build: npm ci && npm run build:solid
 
 widget.js: https://github.com/pondersource/remotestorage-widget
@@ -21,6 +21,6 @@ Google also needs the app origin registered as a JavaScript origin.
 Google and Dropbox return to the home route; Solid restores the previous route.
 
 SHA-256:
-676c37577bd23a5908bdf47e5fae95fade202d28d606bece6536f39d5aeb7c7f  rs.js
+941812bef9b9e42d10a7f8313545fa8b207dc572c786fce5ff0983d3ae888089  rs.js
 82804aecac733b7aa1ec8163dc0f5adecee82f007b0affb73b841495c9205937  widget.js
 c52e037f4c17bba04d609fb5abf2f219dc147884d9b0275052628132e156e9ea  modules.js
