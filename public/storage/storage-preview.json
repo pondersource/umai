@@ -1,0 +1,13 @@
+{
+  "status": "local experimental preview, not deployed",
+  "artifacts": {
+    "rs.js": "546d48fba3fb4f2d7c2619a851ab92959af1ca9bf4efc0273b12f695dc7e5871",
+    "widget.js": "7a070705f828684e16de500610ed8874c1c8943e8416e87babb7b6a810340bb6",
+    "modules.js": "5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63"
+  },
+  "sourceBases": {
+    "remotestorage.js": "92e1fc4dc0526d5c29bfef11dfc2bf9ad646347d",
+    "remotestorage-widget": "5ad6a05472acf7a5368d18cccd9a2349dc368b1c",
+    "data-modules": "47678bb3f213e83a1c535eb97343678effbc7d46"
+  }
+}
