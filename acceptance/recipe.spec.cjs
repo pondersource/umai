@@ -35,7 +35,7 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         response.ok() &&
         (response.request().postData() || '').includes(title),
     );
-    await page.locator('input[type=file][accept*="json"]').setInputFiles({
+    await page.getByRole('button', { name: 'Upload JsonLD file', exact: true }).setInputFiles({
         name: 'recipe.jsonld',
         mimeType: 'application/ld+json',
         buffer: Buffer.from(JSON.stringify({
