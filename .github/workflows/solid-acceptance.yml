@@ -45,6 +45,8 @@ jobs:
   build:
     needs: recipe-sync
     runs-on: ubuntu-latest
+    outputs:
+      artifact_name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -59,9 +61,9 @@ jobs:
       - run: |
           printf '%s\n' umai.pondersource.com > dist/CNAME
           touch dist/.nojekyll
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-pages-artifact@v3
         with:
-          name: umai-production
+          name: github-pages-${{ github.run_id }}-${{ github.run_attempt }}
           path: dist/
 
   deploy:
@@ -75,16 +77,11 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/download-artifact@v4
-        with:
-          name: umai-production
-          path: site
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
       - uses: actions/deploy-pages@v4
         id: deployment
+        with:
+          artifact_name: ${{ needs.build.outputs.artifact_name }}
 
   live:
     needs: deploy
