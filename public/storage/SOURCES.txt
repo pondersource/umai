@@ -1,16 +1,16 @@
 Ponder Source storage runtime sources
 
 rs.js fork source: https://github.com/pondersource/remotestorage.js
-commit: 27fda517eceda07c3a2df085a129ddd531272993
+commit: 2517fe04cd66f27c430ec451167efd6b0c73393d
 upstream project: https://github.com/remotestorage/remotestorage.js
 build from this source revision: npm ci && npm run build:all
-source SHA-256: 24759f5b278cfcf60677e01277f4b441e35f31f77852f7739a95035f305eaa48
+source SHA-256: 67bf44adbf3eec91ade3be0a47b30f5dc620433437d04ea8c9df8d7cd00a96ae
 
 widget.js fork source: https://github.com/pondersource/remotestorage-widget
-commit: 045c78cd752593e58fffed7386ddcbb4ba74dd2e
+commit: 18a22cf75e54bef68620c7e6968b38fc3e4c20bf
 upstream project: https://github.com/remotestorage/remotestorage-widget
 build from this source revision: npm ci && npm run build
-source SHA-256: 40bb0fb37ff5a39db1f97adf373de3e4a5c382fba979f402ef77b080e291a076
+source SHA-256: e388a84a7b15d792a19ec1373f013681b2191ec1ac53e408800c3c7da44b5540
 Historical Solid-only proposal: https://github.com/remotestorage/remotestorage-widget/pull/136
 The added LWS, OneDrive, AtomicServer and Nextgraph controls belong to the
 Ponder Source fork; they are not supplied by upstream proposal #136.
@@ -36,6 +36,10 @@ remotestorage-all.js.LICENSE.txt), widget.js.LICENSE.txt and
 modules.js.LICENSE.txt. Original source and third-party notices are retained.
 
 SHA-256:
-9e3d17d894765cb9eca44264ee700b8182f06f50a80139f19ca0599e178762db  rs.js
-7a070705f828684e16de500610ed8874c1c8943e8416e87babb7b6a810340bb6  widget.js
+b38d6acff0ad303b0ec484e52781a528c3bbd21cea4efce3f51013d440e88030  rs.js
+ba56426df06e42c218cde6f3e2d108229d1c18f190c078aa424c50d4960ed417  widget.js
 5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63  modules.js
+
+Preview 7 retains NextGraph recovery records in a local IndexedDB journal.
+The native SDK owns encrypted replication; local recovery is not broker receipt.
+Real wallet/broker and signed-in production OneDrive acceptance remain pending.

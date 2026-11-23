@@ -1,19 +1,19 @@
 {
   "status": "experimental fork preview; source and artifact provenance",
   "artifacts": {
-    "rs.js": "9e3d17d894765cb9eca44264ee700b8182f06f50a80139f19ca0599e178762db",
-    "remotestorage-all.js.map": "915372c6c56e1ae3bb367c5deff63cb82ec6d674e9309e8107718b8dc0a54c2a",
-    "widget.js": "7a070705f828684e16de500610ed8874c1c8943e8416e87babb7b6a810340bb6",
-    "widget.js.map": "29d9633d018935b9dcfbd009d40c5e44536467e33d356acd744c628ac949819b",
+    "rs.js": "b38d6acff0ad303b0ec484e52781a528c3bbd21cea4efce3f51013d440e88030",
+    "remotestorage-all.js.map": "f8f60115de3efd6e75c8405fc382a8de7f7777d799c87ce03acba17384b478fd",
+    "widget.js": "ba56426df06e42c218cde6f3e2d108229d1c18f190c078aa424c50d4960ed417",
+    "widget.js.map": "18ecfd124f426d6efcd49c243ce5011afc092c4918d27bf58a494e73f0225979",
     "modules.js": "5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63"
   },
   "sourceBases": {
-    "remotestorage.js": "27fda517eceda07c3a2df085a129ddd531272993",
-    "remotestorage-widget": "045c78cd752593e58fffed7386ddcbb4ba74dd2e",
+    "remotestorage.js": "2517fe04cd66f27c430ec451167efd6b0c73393d",
+    "remotestorage-widget": "18a22cf75e54bef68620c7e6968b38fc3e4c20bf",
     "data-modules": "76405c535234bb62e77debe85ea7ec2a83b6ab1f"
   },
   "sourceSha256": {
-    "remotestorage.js": "24759f5b278cfcf60677e01277f4b441e35f31f77852f7739a95035f305eaa48",
-    "remotestorage-widget": "40bb0fb37ff5a39db1f97adf373de3e4a5c382fba979f402ef77b080e291a076"
+    "remotestorage.js": "67bf44adbf3eec91ade3be0a47b30f5dc620433437d04ea8c9df8d7cd00a96ae",
+    "remotestorage-widget": "e388a84a7b15d792a19ec1373f013681b2191ec1ac53e408800c3c7da44b5540"
   }
 }
