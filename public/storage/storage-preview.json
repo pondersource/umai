@@ -1,0 +1,13 @@
+{
+  "status": "experimental fork preview, not deployed",
+  "artifacts": {
+    "rs.js": "b5d794d6e0b894ba1f14eac4b0ea5b599f2e13c4648579b88d6bf22209425ed7",
+    "widget.js": "7a070705f828684e16de500610ed8874c1c8943e8416e87babb7b6a810340bb6",
+    "modules.js": "5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63"
+  },
+  "sourceBases": {
+    "remotestorage.js": "c97481060a30d7adcd6136525572cfeeb63927b0",
+    "remotestorage-widget": "045c78cd752593e58fffed7386ddcbb4ba74dd2e",
+    "data-modules": "76405c535234bb62e77debe85ea7ec2a83b6ab1f"
+  }
+}

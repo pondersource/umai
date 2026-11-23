@@ -8113,9 +8113,30 @@ var PonderSourceModules = (() => {
     Movies: () => Movies,
     Recipes: () => Recipes,
     connectApp: () => connectApp,
+    dataModule: () => dataModule,
     parseMovies: () => parseMovies,
     parseRecipes: () => parseRecipes
   });
+
+  // src/native-solid.js
+  function nativeSolidView({ fetch: authenticatedFetch, webId, root }, helpers, domain, permission = () => true) {
+    const pod = new URL(root);
+    if (!pod.pathname.endsWith("/") || pod.search || pod.hash || pod.username || pod.password || !(pod.protocol === "https:" || pod.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(pod.hostname))) throw Error("Choose an HTTPS Solid Pod root (or localhost)");
+    const profile = new URL(webId);
+    profile.hash = "";
+    const scoped = async (input, init) => {
+      const url = new URL(input instanceof Request ? input.url : String(input), pod);
+      if (url.username || url.password || /%(?:2f|5c)/i.test(url.pathname) || !["https:", "http:"].includes(url.protocol)) throw Error("Unsupported Solid document URL");
+      const method = (init?.method || (input instanceof Request ? input.method : "GET")).toUpperCase();
+      const own = url.href.startsWith(pod.href), read = ["GET", "HEAD"].includes(method);
+      if (!permission(read ? "r" : "rw")) return new Response(null, { status: 403 });
+      if (!own && !read) return new Response(null, { status: 403 });
+      if (own || url.href.split("#")[0] === profile.href) return authenticatedFetch(input instanceof Request ? input : url.href, init);
+      return globalThis.fetch(url.href, { method, credentials: "omit", headers: { Accept: new Headers(init?.headers).get("Accept") || "*/*" } });
+    };
+    const api = { ...helpers, nativeSolidDocuments: true, root: pod.href, webId, fetch: scoped };
+    return Object.assign(api, domain(api));
+  }
 
   // node_modules/n3/src/N3Lexer.js
   var import_buffer = __toESM(require_buffer());
@@ -11442,6 +11463,10 @@ var PonderSourceModules = (() => {
     };
     const profile = await readGraph(webId.split("#")[0]);
     const indexes = ["privateTypeIndex", "publicTypeIndex"].flatMap((key) => profile.getObjects(namedNode3(webId), namedNode3(solid + key), null).map((t) => t.value));
+    for (const preferences of profile.getObjects(namedNode3(webId), namedNode3("http://www.w3.org/ns/pim/space#preferencesFile"), null)) {
+      const graph = await readGraph(preferences.value);
+      indexes.push(...graph.getObjects(namedNode3(webId), namedNode3(solid + "privateTypeIndex"), null).map((t) => t.value));
+    }
     const registrations = [];
     for (const index of [...new Set(indexes)]) {
       const graph = await readGraph(index);
@@ -11511,11 +11536,25 @@ var PonderSourceModules = (() => {
         properties: { kind: { enum: ["container", "rdf", "file"] }, etag: { type: "string" } }
       } }
     });
-    const path = (url) => "_rs/resources/" + encodeURIComponent(url);
+    const legacyPath = (url) => "_rs/resources/" + encodeURIComponent(url);
+    const compactPath = async (url) => {
+      const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(url));
+      return "_rs/resources/url-" + [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+    };
+    const locate = async (url) => {
+      const compact = await compactPath(url);
+      const current = await client.getObject(compact);
+      const legacy = legacyPath(url);
+      const listing = await client.getListing("_rs/resources/") || {};
+      const old = Object.prototype.hasOwnProperty.call(listing, legacy.slice("_rs/resources/".length)) ? await client.getObject(legacy) : void 0;
+      for (const record of [current, old]) if (record && record.url !== url) throw Error("Resource identity does not match its storage key");
+      if (current && old && JSON.stringify(current) !== JSON.stringify(old)) throw Error("Conflicting resource copies need attention");
+      return { path: old ? legacy : compact, record: old || current, duplicate: current && old ? compact : void 0 };
+    };
     let queue = Promise.resolve();
     return {
       async get(url) {
-        const record = await client.getObject(path(url));
+        const { record } = await locate(url);
         if (!record) return void 0;
         const resource = { ...record.resource };
         if (resource.kind === "file") resource.bytes = Uint8Array.from(atob(resource.base64), (c) => c.charCodeAt(0));
@@ -11530,11 +11569,25 @@ var PonderSourceModules = (() => {
           resource.base64 = btoa(text);
           delete resource.bytes;
         }
-        await client.storeObject("rdf-resource", path(url), { url, resource });
+        const existing = await locate(url);
+        if (existing.duplicate) throw Error("Duplicate resource copies must be reconciled before editing");
+        await client.storeObject("rdf-resource", existing.path, { ...existing.record, url, resource });
       },
-      delete: (url) => client.remove(path(url)),
+      async delete(url) {
+        const existing = await locate(url);
+        await client.remove(existing.path);
+        if (existing.duplicate) await client.remove(existing.duplicate);
+      },
       async urls() {
-        return Object.keys(await client.getListing("_rs/resources/") || {}).filter((name) => !name.endsWith("/")).map(decodeURIComponent);
+        const urls = [];
+        for (const name of Object.keys(await client.getListing("_rs/resources/") || {}).filter((name2) => !name2.endsWith("/"))) {
+          if (/^url-[0-9a-f]{64}$/.test(name)) {
+            const record = await client.getObject("_rs/resources/" + name);
+            if (!record || typeof record.url !== "string" || await compactPath(record.url) !== "_rs/resources/" + name) throw Error("Invalid compact resource identity");
+            urls.push(record.url);
+          } else urls.push(decodeURIComponent(name));
+        }
+        return [...new Set(urls)];
       },
       async clear() {
         for (const url of await this.urls()) await this.delete(url);
@@ -11558,6 +11611,26 @@ var PonderSourceModules = (() => {
     return new TripleLines(output.split("\n").filter(Boolean));
   }
 
+  // src/expanded-jsonld.js
+  function expandedJsonLd(turtle2, baseIRI) {
+    var _a;
+    const nodes2 = /* @__PURE__ */ new Map();
+    const id = (term) => term.termType === "BlankNode" ? "_:" + term.value : term.value;
+    for (const quad4 of new N3Parser({ baseIRI }).parse(turtle2)) {
+      const subject = id(quad4.subject);
+      if (!nodes2.has(subject)) nodes2.set(subject, { "@id": subject });
+      const node = nodes2.get(subject);
+      if (quad4.predicate.value === "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && quad4.object.termType === "NamedNode") {
+        (node["@type"] || (node["@type"] = [])).push(quad4.object.value);
+        continue;
+      }
+      const object = quad4.object;
+      const value = object.termType === "Literal" ? { "@value": object.value, ...object.language ? { "@language": object.language } : { "@type": object.datatype.value } } : { "@id": id(object) };
+      (node[_a = quad4.predicate.value] || (node[_a] = [])).push(value);
+    }
+    return [...nodes2.values()];
+  }
+
   // src/resource-pod.ts
   var LDP = "http://www.w3.org/ns/ldp#";
   var PIM_STORAGE = "http://www.w3.org/ns/pim/space#Storage";
@@ -11576,7 +11649,7 @@ var PonderSourceModules = (() => {
       if (method === "GET" || method === "HEAD") return read(url, method, headers, current);
       if (method === "POST") {
         if (!url.endsWith("/") || current?.kind !== "container") return answer(url, 409);
-        const container = headers.get("Link")?.includes("BasicContainer") ?? false;
+        const container = /<http:\/\/www\.w3\.org\/ns\/ldp#(?:Basic)?Container>/.test(headers.get("Link") || "");
         const slug = encodeURIComponent(headers.get("Slug") || crypto.randomUUID());
         const target = url + slug + (container ? "/" : "");
         const result = await handle({ ...request, url: target, method: "PUT" });
@@ -11614,11 +11687,18 @@ var PonderSourceModules = (() => {
       if (current === void 0) return answer(url, 404);
       if (headers.get("If-None-Match") === current.etag)
         return answer(url, 304, null, { ETag: current.etag });
-      const { body, contentType } = await representationOf(url, current);
+      let { body, contentType } = await representationOf(url, current);
+      if (current.kind !== "file" && headers.get("Accept")?.includes("application/ld+json")) {
+        body = JSON.stringify(expandedJsonLd(String(body), url));
+        contentType = "application/ld+json";
+      }
       return answer(url, 200, method === "HEAD" ? null : body, {
         "Content-Type": contentType,
         ETag: current.etag,
-        Link: linksOf(url, current)
+        Link: linksOf(url, current),
+        "Accept-Patch": "application/sparql-update, text/n3",
+        "WAC-Allow": 'user="read write append"',
+        "MS-Author-Via": "SPARQL"
       });
     }
     async function remove(url, current) {
@@ -11634,10 +11714,10 @@ var PonderSourceModules = (() => {
       const contentType = headers.get("Content-Type") ?? "";
       const text = typeof request.body === "string" ? request.body : null;
       if (method === "PATCH") {
-        if (!contentType.startsWith("application/sparql-update") || text === null)
+        if (!contentType.startsWith("application/sparql-update") && !contentType.startsWith("text/n3") || text === null)
           return answer(url, 415);
         if (current !== void 0 && current.kind !== "rdf") return answer(url, 409);
-        const triples = await patched(url, current?.triples ?? [], text);
+        const triples = contentType.startsWith("text/n3") ? await n3Patched(url, current?.triples ?? [], text) : await patched(url, current?.triples ?? [], text);
         if (triples === null) return answer(url, 400);
         return { kind: "rdf", etag: newEtag(), triples };
       }
@@ -11672,7 +11752,10 @@ var PonderSourceModules = (() => {
         ...resource.triples ?? [],
         `<${url}> <${RDF_TYPE}> <${LDP}Container> .`,
         `<${url}> <${RDF_TYPE}> <${LDP}BasicContainer> .`,
-        ...(await childrenOf(url)).map((child) => `<${url}> <${LDP}contains> <${child}> .`)
+        ...(await childrenOf(url)).flatMap((child) => [
+          `<${url}> <${LDP}contains> <${child}> .`,
+          ...child.endsWith("/") ? [`<${child}> <${RDF_TYPE}> <${LDP}Container> .`, `<${child}> <${RDF_TYPE}> <${LDP}BasicContainer> .`] : []
+        ])
       ];
       return { body: lines.join("\n"), contentType: "text/turtle" };
     }
@@ -11703,6 +11786,30 @@ var PonderSourceModules = (() => {
       }
     }
     return [...result];
+  }
+  async function n3Patched(url, triples, update) {
+    try {
+      const quads = new N3Parser({ baseIRI: url, format: "N3" }).parse(update);
+      const solid2 = "http://www.w3.org/ns/solid/terms#";
+      const root = quads.filter((q) => q.graph.termType === "DefaultGraph");
+      const patches = root.filter((q) => q.predicate.value === RDF_TYPE && q.object.value === solid2 + "InsertDeletePatch");
+      if (patches.length !== 1 || root.some((q) => ![RDF_TYPE, solid2 + "inserts", solid2 + "deletes"].includes(q.predicate.value))) return null;
+      const result = new TripleLines(triples);
+      for (const link of root.filter((q) => q.predicate.value === solid2 + "deletes" || q.predicate.value === solid2 + "inserts")) {
+        const contents = quads.filter((q) => q.graph.equals(link.object));
+        if (contents.some((q) => [q.subject, q.predicate, q.object].some((t) => t.termType === "Variable" || t.termType === "BlankNode"))) return null;
+        const writer = new N3Writer({ format: "N-Triples" });
+        writer.addQuads(contents.map((q) => N3DataFactory_default.quad(q.subject, q.predicate, q.object)));
+        const text = await new Promise((resolve, reject) => writer.end((error, text2) => error ? reject(error) : resolve(text2)));
+        for (const line of text.split("\n").filter(Boolean)) {
+          if (link.predicate.value === solid2 + "deletes") result.delete(line);
+          else result.add(line);
+        }
+      }
+      return [...result];
+    } catch {
+      return null;
+    }
   }
   function dataBlocks(update) {
     const blocks = [];
@@ -11761,7 +11868,7 @@ var PonderSourceModules = (() => {
   function answer(url, status, body = null, headers = {}) {
     const response = new Response(status === 304 || status === 204 || status === 205 ? null : body, {
       status,
-      headers
+      headers: { "Accept-Patch": "application/sparql-update, text/n3", "WAC-Allow": 'user="read write append"', "MS-Author-Via": "SPARQL", ...headers }
     });
     Object.defineProperty(response, "url", { value: url });
     return response;
@@ -11920,7 +12027,7 @@ var PonderSourceModules = (() => {
     const rs = new RemoteStorage({ modules: [module] });
     rs.access.claim(module.name, "rw");
     rs.caching.enable("/" + module.name + "/");
-    rs.setApiKeys(apiKeys);
+    rs.setApiKeys(Object.fromEntries(Object.entries(apiKeys).filter(([name]) => name !== "onedrive" || rs.onedrive)));
     const widget = new Widget(rs, { solidProviders: { allowAnyProvider: true }, skipInitial: true, leaveOpen: true });
     const host = document.getElementById(element);
     Object.assign(host.style, { position: "fixed", bottom: "12px", left: "12px", zIndex: "1000" });
@@ -11993,14 +12100,15 @@ var PonderSourceModules = (() => {
   }
 
   // src/index.js
-  function dataModule(name, classes, helpers = {}) {
+  function dataModule(name, classes, helpers = {}, domain = () => ({})) {
     return { name, builder(privateClient, publicClient) {
       const store = createResourceStore(privateClient, name);
       const root = "https://" + name + ".storage.pondersource.invalid/";
       const fetch = createLocalPod({ root, store, newEtag: () => '"' + crypto.randomUUID() + '"' });
       privateClient.declareType("migration", { type: "object", properties: { complete: { type: "boolean" } }, required: ["complete"] });
-      return { exports: {
+      const api = {
         ...helpers,
+        nativeSolid: (context) => nativeSolidView(context, helpers, domain, (mode) => privateClient.storage?.access ? privateClient.storage.access.checkPermission(name, mode) : true),
         ...publicResources({ privateClient, publicClient, store, root }),
         async migrateSolid(fetcher, webId, excludePrefix) {
           if ((await privateClient.getObject("_rs/migration"))?.complete) return;
@@ -12014,13 +12122,20 @@ var PonderSourceModules = (() => {
         fetch,
         // Solid Memo's existing RDF adapters can use the exact resource-store contract.
         resources: store,
+        onChange(callback) {
+          if (!privateClient.on) throw Error("This client does not provide change events");
+          privateClient.on("change", callback);
+          return () => privateClient.removeEventListener("change", callback);
+        },
         async initialize() {
           const profile = root + "profile/card";
           if (await store.get(profile)) return;
           await fetch(root + "settings/privateTypeIndex", { method: "PUT", headers: { "Content-Type": "text/turtle" }, body: "<> a <http://www.w3.org/ns/solid/terms#TypeIndex>, <http://www.w3.org/ns/solid/terms#UnlistedDocument>." });
-          await fetch(profile, { method: "PUT", headers: { "Content-Type": "text/turtle", "If-None-Match": "*" }, body: `<#me> a <http://xmlns.com/foaf/0.1/Person>; <http://xmlns.com/foaf/0.1/name> "My storage"; <http://www.w3.org/ns/pim/space#storage> <${root}>; <http://www.w3.org/ns/solid/terms#privateTypeIndex> <${root}settings/privateTypeIndex>.` });
+          await fetch(root + "settings/preferences", { method: "PUT", headers: { "Content-Type": "text/turtle" }, body: `<${root}profile/card#me> <http://www.w3.org/ns/solid/terms#privateTypeIndex> <${root}settings/privateTypeIndex>.` });
+          await fetch(profile, { method: "PUT", headers: { "Content-Type": "text/turtle", "If-None-Match": "*" }, body: `<#me> a <http://xmlns.com/foaf/0.1/Person>; <http://xmlns.com/foaf/0.1/name> "My storage"; <http://www.w3.org/ns/pim/space#storage> <${root}>; <http://www.w3.org/ns/pim/space#preferencesFile> <${root}settings/preferences>; <http://www.w3.org/ns/solid/terms#privateTypeIndex> <${root}settings/privateTypeIndex>.` });
         }
-      } };
+      };
+      return { exports: Object.assign(api, domain(api)) };
     } };
   }
   var Recipes = dataModule("recipes", ["https://schema.org/Recipe"], { parseRecipes });

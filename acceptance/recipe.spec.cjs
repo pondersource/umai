@@ -25,7 +25,13 @@ async function connect(page) {
 
 test('persists a private recipe and syncs it into a fresh browser', async ({ page, browser, request, baseURL }) => {
     await connect(page);
-    const registered = page.waitForResponse(response => response.ok() && response.request().method()==='PUT' && response.url().includes('privateTypeIndex') && (response.request().postData()||'').includes('TypeRegistration'));
+    const registered = page.waitForResponse(response => {
+        if (!response.ok() || response.request().method() !== 'PUT' ||
+            !response.url().startsWith(pod + 'recipes/_rs/resources/')) return false;
+        const record = response.request().postDataJSON();
+        return record.url.endsWith('/settings/privateTypeIndex') &&
+            record.resource.triples.some(triple => triple.includes('TypeRegistration'));
+    });
     await page.getByRole('button', { name: 'Continue', exact: true }).click();
 
     await page.getByText(/^(New recipe|Create your first recipe)$/).first().click();
@@ -35,7 +41,7 @@ test('persists a private recipe and syncs it into a fresh browser', async ({ pag
         response.ok() &&
         (response.request().postData() || '').includes(title),
     );
-    await page.locator('input[type=file][accept*="json"]').setInputFiles({
+    await page.getByRole('button', { name: 'Upload JsonLD file', exact: true }).setInputFiles({
         name: 'recipe.jsonld',
         mimeType: 'application/ld+json',
         buffer: Buffer.from(JSON.stringify({
