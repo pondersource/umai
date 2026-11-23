@@ -1,15 +1,23 @@
-PonderSource storage runtime sources
+Ponder Source storage runtime sources
 
-rs.js: https://github.com/remotestorage/remotestorage.js
-commit: 92e1fc4dc0526d5c29bfef11dfc2bf9ad646347d
-build: npm ci && npm run build:solid
+rs.js fork source: https://github.com/pondersource/remotestorage.js
+commit: 27fda517eceda07c3a2df085a129ddd531272993
+upstream project: https://github.com/remotestorage/remotestorage.js
+build from this source revision: npm ci && npm run build:all
+source SHA-256: 24759f5b278cfcf60677e01277f4b441e35f31f77852f7739a95035f305eaa48
 
-widget.js: https://github.com/pondersource/remotestorage-widget
-commit: 5ad6a05472acf7a5368d18cccd9a2349dc368b1c
-upstream PR: https://github.com/remotestorage/remotestorage-widget/pull/136
+widget.js fork source: https://github.com/pondersource/remotestorage-widget
+commit: 045c78cd752593e58fffed7386ddcbb4ba74dd2e
+upstream project: https://github.com/remotestorage/remotestorage-widget
+build from this source revision: npm ci && npm run build
+source SHA-256: 40bb0fb37ff5a39db1f97adf373de3e4a5c382fba979f402ef77b080e291a076
+Historical Solid-only proposal: https://github.com/remotestorage/remotestorage-widget/pull/136
+The added LWS, OneDrive, AtomicServer and Nextgraph controls belong to the
+Ponder Source fork; they are not supplied by upstream proposal #136.
 
-modules.js: https://github.com/pondersource/data-modules
-commit: 8f91abc2f7ce098e94a20a9cb6da44f490c935f1
+modules.js fork source: https://github.com/pondersource/data-modules
+commit: 76405c535234bb62e77debe85ea7ec2a83b6ab1f
+upstream project: https://github.com/solid-contrib/data-modules
 build in remotestorage/: npm ci && npm run build
 
 The Recipes, Movies and Flashcards modules own scope storage and read-only
@@ -19,8 +27,15 @@ Public sharing copies only selected documents; private originals stay private.
 Google/Dropbox callback: this app's HTTPS origin without a trailing slash.
 Google also needs the app origin registered as a JavaScript origin.
 Google and Dropbox return to the home route; Solid restores the previous route.
+OneDrive callback: this app's HTTPS origin plus /. Register it as a SPA redirect
+URI in the shared Microsoft application before sign-in. Personal accounts only.
+LWS uses its native OpenID sign-in and restores the app route after consent.
+
+Retained license notices: rs.js.LICENSE.txt (also copied as
+remotestorage-all.js.LICENSE.txt), widget.js.LICENSE.txt and
+modules.js.LICENSE.txt. Original source and third-party notices are retained.
 
 SHA-256:
-941812bef9b9e42d10a7f8313545fa8b207dc572c786fce5ff0983d3ae888089  rs.js
-82804aecac733b7aa1ec8163dc0f5adecee82f007b0affb73b841495c9205937  widget.js
-c52e037f4c17bba04d609fb5abf2f219dc147884d9b0275052628132e156e9ea  modules.js
+9e3d17d894765cb9eca44264ee700b8182f06f50a80139f19ca0599e178762db  rs.js
+7a070705f828684e16de500610ed8874c1c8943e8416e87babb7b6a810340bb6  widget.js
+5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63  modules.js
