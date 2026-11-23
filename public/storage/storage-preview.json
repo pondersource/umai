@@ -1,17 +1,19 @@
 {
   "status": "experimental fork preview; source and artifact provenance",
   "artifacts": {
-    "rs.js": "f4d2fb86d353d225ad5855638647961be1bd529563fa36ea1b1c14c138821746",
+    "rs.js": "9e3d17d894765cb9eca44264ee700b8182f06f50a80139f19ca0599e178762db",
+    "remotestorage-all.js.map": "915372c6c56e1ae3bb367c5deff63cb82ec6d674e9309e8107718b8dc0a54c2a",
     "widget.js": "7a070705f828684e16de500610ed8874c1c8943e8416e87babb7b6a810340bb6",
+    "widget.js.map": "29d9633d018935b9dcfbd009d40c5e44536467e33d356acd744c628ac949819b",
     "modules.js": "5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63"
   },
   "sourceBases": {
-    "remotestorage.js": "d295cef9e41e1a3f0d3ff4dd784ba8599d77b787",
+    "remotestorage.js": "27fda517eceda07c3a2df085a129ddd531272993",
     "remotestorage-widget": "045c78cd752593e58fffed7386ddcbb4ba74dd2e",
     "data-modules": "76405c535234bb62e77debe85ea7ec2a83b6ab1f"
   },
   "sourceSha256": {
-    "remotestorage.js": "3e665267b16d47bfe7b9c0c1d166932f3696cbd4f05ab41e142d3e5fc32d2fe2",
+    "remotestorage.js": "24759f5b278cfcf60677e01277f4b441e35f31f77852f7739a95035f305eaa48",
     "remotestorage-widget": "40bb0fb37ff5a39db1f97adf373de3e4a5c382fba979f402ef77b080e291a076"
   }
 }
