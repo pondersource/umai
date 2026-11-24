@@ -3,17 +3,17 @@
   "artifacts": {
     "rs.js": "88de6672376fc2d5a38cdd2ba0320c095e0d7987e35ad5d7e6fbb996a68b3065",
     "remotestorage-all.js.map": "476c932656f5ba278302f8dc54fd855dc396a2662401c92490f98ef70d9ad010",
-    "widget.js": "500fb7d0419a8c39c72869d9d37d4c4c2daf4f2e359156c4e1294559e6a9834c",
-    "widget.js.map": "616348c3cb184900857a1991e06ca350e15e0ccbedb636e31253034cd53ec54e",
+    "widget.js": "75eff3c1342f85ca178d3ff34bcd55c1b10d93826f32ed6f1c2d81fc34726c45",
+    "widget.js.map": "b113be91cbdf901eda88c49a607681b39fc4876e613b2b4df7b9843f9018c824",
     "modules.js": "5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63"
   },
   "sourceBases": {
     "remotestorage.js": "47cf02b312902298efcbfc8c7c6cd1bfb637e11c",
-    "remotestorage-widget": "4857d1b236d159d9b00c2f18792851cacc70593e",
+    "remotestorage-widget": "14acf28d44851a5984dbfa91ba71e35a5b3a0b79",
     "data-modules": "76405c535234bb62e77debe85ea7ec2a83b6ab1f"
   },
   "sourceSha256": {
     "remotestorage.js": "0bbb41e92a042947ba9935083efdf68681b44e18341e0a180b065587d7a8ac10",
-    "remotestorage-widget": "85b93b6de006b455b1bd7c170dc6b07cc211aa67019bb36513d11077d31f3491"
+    "remotestorage-widget": "7f24b8179085c099506bfc2e05086098c667f3801c13d5bc230613c767d1640d"
   }
 }

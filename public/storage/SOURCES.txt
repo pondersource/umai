@@ -37,7 +37,7 @@ modules.js.LICENSE.txt. Original source and third-party notices are retained.
 
 SHA-256:
 88de6672376fc2d5a38cdd2ba0320c095e0d7987e35ad5d7e6fbb996a68b3065  rs.js
-500fb7d0419a8c39c72869d9d37d4c4c2daf4f2e359156c4e1294559e6a9834c  widget.js
+75eff3c1342f85ca178d3ff34bcd55c1b10d93826f32ed6f1c2d81fc34726c45  widget.js
 5e85dc095d2c81adb1bb11ee168f04a7fddcc234d7b5fa3ce7c4134b64c22b63  modules.js
 
 Preview 7 retains NextGraph recovery records in a local IndexedDB journal.
