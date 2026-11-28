@@ -1,0 +1,17 @@
+{
+  "core": "https://github.com/pondersource/remotestorage.js/pull/15",
+  "widget": "https://github.com/pondersource/remotestorage-widget/pull/9",
+  "pilot": "https://github.com/pondersource/litewrite/pull/16",
+  "sdkSource": "https://github.com/ontola/atomic-server/tree/fb640fb54657ef826db8ec7ca55e24587faab1da",
+  "files": {
+    "rs.js": "ba40c8522773406b032011cc3d5190e9734dc8f8a52098000e949372db192a4e",
+    "remotestorage-all.js.LICENSE.txt": "6195b4dad315ff229e5ade11dcbdc157538c0fd5401d66df4d9748532e38fa86",
+    "remotestorage-all.js.map": "f0deb4ea2f8d7247533ea0f2a8828e571c5fe5693e3ed46110d8a1234b8302f5",
+    "widget.js": "061ccdc256c6a4a0b8ebbcd3d6269cc68a0dcccab1b86ff410689997cd05c3bb",
+    "widget.js.LICENSE.txt": "8c9946dfc859a2bfb26cc541125631cd96e7110fa20a702eb19275c9d1658805",
+    "widget.js.map": "47789254e728b194344fc12a9af17c555f30a3b3a22914b290355c88c1524800",
+    "atomic-sdk/LICENSE": "e87e450d1a7e328c14cdd0435a5e9e10e42cd46fe1114656a339a9c695f2fab0",
+    "atomic-sdk/index.mjs": "b744dca93d6521a8270c2457e905144644debd65423ad07ea7bf212d0e41fdc1",
+    "atomic-sdk/loro_wasm_bg.wasm": "3760811c5d6e9014169a7c8c50fcda4415c92b834e701f6d7db621a6b4548b42"
+  }
+}
